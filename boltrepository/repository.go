@@ -8,7 +8,8 @@ import (
 )
 
 type Repository struct {
-	FilePath string
+	FilePath  string
+	GetObject func([]byte) interface{}
 }
 
 func NewRepository(filePath string) *Repository {
@@ -25,9 +26,65 @@ func (r *Repository) Deserialize(jsonBytes []byte, target interface{}) error {
 	return err
 }
 
-func (r *Repository) ReadInto(bucketName string, keyName string, target interface{}) {
+func (r *Repository) ForEach(bucketName string, action func(string, interface{})) error {
 
-	db, err := bolt.Open(r.FilePath, 0644, nil)
+	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// retrieve the data
+	err = db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketName))
+		if bucket == nil {
+			return fmt.Errorf("Bucket %q not found!", []byte(bucketName))
+		}
+
+		bucket.ForEach(func(k, v []byte) error {
+
+			key := string(k)
+			value := r.GetObject(v)
+
+			action(key, value)
+
+			return nil
+		})
+		return nil
+
+	})
+
+	return err
+}
+
+func (r *Repository) Read(bucketName string, keyName string) (obj interface{}, err error) {
+
+	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	// retrieve the data
+	err = db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketName))
+		if bucket == nil {
+			return fmt.Errorf("Bucket %q not found!", []byte(bucketName))
+		}
+
+		val := bucket.Get([]byte(keyName))
+
+		obj = r.GetObject(val)
+
+		return nil
+	})
+
+	return obj, err
+}
+
+func (r *Repository) ReadInto(bucketName string, keyName string, target interface{}) error {
+
+	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,9 +102,7 @@ func (r *Repository) ReadInto(bucketName string, keyName string, target interfac
 		return r.Deserialize(val, &target)
 	})
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	return err
 }
 
 func (r *Repository) Save(bucketName string, keyName string, value interface{}) {
