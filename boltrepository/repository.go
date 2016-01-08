@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/boltdb/bolt"
-	"log"
 )
 
 type Repository struct {
@@ -30,7 +29,7 @@ func (r *Repository) ForEach(bucketName string, action func(string, interface{})
 
 	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer db.Close()
 
@@ -61,7 +60,7 @@ func (r *Repository) Read(bucketName string, keyName string) (obj interface{}, e
 
 	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer db.Close()
 
@@ -86,7 +85,7 @@ func (r *Repository) ReadInto(bucketName string, keyName string, target interfac
 
 	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer db.Close()
 
@@ -105,11 +104,11 @@ func (r *Repository) ReadInto(bucketName string, keyName string, target interfac
 	return err
 }
 
-func (r *Repository) Save(bucketName string, keyName string, value interface{}) {
+func (r *Repository) Save(bucketName string, keyName string, value interface{}) error {
 
 	db, err := bolt.Open(r.FilePath, 0644, nil)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer db.Close()
 
@@ -129,9 +128,7 @@ func (r *Repository) Save(bucketName string, keyName string, value interface{}) 
 		return nil
 	})
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	return err
 }
 
 func (r *Repository) Serialize(value interface{}) ([]byte, error) {
