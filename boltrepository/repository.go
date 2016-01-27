@@ -15,6 +15,10 @@ func NewRepository(filePath string) *Repository {
 	repository := &Repository{
 		FilePath: filePath,
 	}
+
+	db, _ := bolt.Open(repository.FilePath, 0644, nil)
+	db.Close()
+
 	return repository
 }
 
