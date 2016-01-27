@@ -56,6 +56,31 @@ func (r *Repository) ForEach(bucketName string, action func(string, interface{})
 	return err
 }
 
+func (r *Repository) HasItem(bucketName string, keyName string) (hasItem bool, err error) {
+
+	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+
+	// retrieve the data
+	err = db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(bucketName))
+		if bucket == nil {
+			return fmt.Errorf("Bucket %q not found!", []byte(bucketName))
+		}
+
+		val := bucket.Get([]byte(keyName))
+
+		hasItem = val != nil
+
+		return nil
+	})
+
+	return hasItem, err
+}
+
 func (r *Repository) Read(bucketName string, keyName string) (obj interface{}, err error) {
 
 	db, err := bolt.Open(r.FilePath, 0644, &bolt.Options{ReadOnly: true})
