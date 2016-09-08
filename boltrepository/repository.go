@@ -22,6 +22,30 @@ func NewRepository(filePath string) *Repository {
 	return repository
 }
 
+func (r *Repository) Delete(bucketName string, keyName string) error {
+
+	db, err := bolt.Open(r.FilePath, 0644, nil)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists([]byte(bucketName))
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Delete([]byte(keyName))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
+}
+
 func (r *Repository) Deserialize(jsonBytes []byte, target interface{}) error {
 
 	err := json.Unmarshal(jsonBytes, &target)
