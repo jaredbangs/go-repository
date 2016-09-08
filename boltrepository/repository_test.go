@@ -13,6 +13,37 @@ type Sample struct {
 	Text   string
 }
 
+func TestDeleteRoundTrip(t *testing.T) {
+
+	filePath := randomString(10) + ".boltdb"
+
+	repository := NewRepository(filePath)
+
+	sample := &Sample{Text: "Hello", Bool: true, Number: 42}
+
+	repository.Save("Bucket1", "Item1", sample)
+
+	deserialized := &Sample{}
+
+	repository.ReadInto("Bucket1", "Item1", &deserialized)
+
+	assert.Equal(t, "Hello", deserialized.Text, "Text should match")
+	assert.Equal(t, true, deserialized.Bool, "Bool should match")
+	assert.Equal(t, 42, deserialized.Number, "Number should match")
+
+	repository.Delete("Bucket1", "Item1")
+
+	deserialized = &Sample{}
+
+	repository.ReadInto("Bucket1", "Item1", &deserialized)
+
+	assert.Equal(t, "", deserialized.Text, "Text should match")
+	assert.Equal(t, false, deserialized.Bool, "Bool should match")
+	assert.Equal(t, 0, deserialized.Number, "Number should match")
+
+	os.Remove(filePath)
+}
+
 func TestForEach(t *testing.T) {
 
 	filePath := randomString(10) + ".boltdb"
