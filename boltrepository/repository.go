@@ -94,8 +94,8 @@ func (r *Repository) HasItem(bucketName string, keyName string) (hasItem bool, e
 
 	// retrieve the data
 	err = db.View(func(tx *bolt.Tx) error {
-		// bucket := tx.Bucket([]byte(bucketName))
-		bucket, _ := tx.CreateBucketIfNotExists([]byte(bucketName))
+		bucket := tx.Bucket([]byte(bucketName))
+		// bucket, _ := tx.CreateBucketIfNotExists([]byte(bucketName))
 
 		val := bucket.Get([]byte(keyName))
 
