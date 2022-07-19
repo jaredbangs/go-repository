@@ -96,9 +96,6 @@ func (r *Repository) HasItem(bucketName string, keyName string) (hasItem bool, e
 	err = db.View(func(tx *bolt.Tx) error {
 		// bucket := tx.Bucket([]byte(bucketName))
 		bucket, _ := tx.CreateBucketIfNotExists([]byte(bucketName))
-		if bucket == nil {
-			return fmt.Errorf("Bucket %q not found!", []byte(bucketName))
-		}
 
 		val := bucket.Get([]byte(keyName))
 
@@ -120,7 +117,7 @@ func (r *Repository) Read(bucketName string, keyName string) (obj interface{}, e
 
 	// retrieve the data
 	err = db.View(func(tx *bolt.Tx) error {
-		bucket, _ := tx.CreateBucketIfNotExists([]byte(bucketName))
+		bucket := tx.Bucket([]byte(bucketName))
 		if bucket == nil {
 			return fmt.Errorf("Bucket %q not found!", []byte(bucketName))
 		}
